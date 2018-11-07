@@ -43,7 +43,7 @@ test_data = [
 def test_valueset(d):
     a = ASCVD(
         age=d[0],
-        diabetic=d[1],
+        diabetic=True, #d[1],
         smoker=d[2],
         hypertensive=d[3],
         systolic=d[4],
@@ -57,7 +57,8 @@ def test_valueset(d):
     assert d[10] == a.compute_lifetime_risk()
 
     if (d[2]):
-        a.compute_ten_year_risk_reduction(quit_smoking=True)
+        a.compute_optimal_lifetime()
+        a.compute_ten_year_risk_reduction(quit_smoking=True, statin_therapy=True)
 
 
 def test_calc_table_a_1():

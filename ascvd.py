@@ -167,27 +167,26 @@ class ASCVD:
         return ascvd_risk
 
     def compute_ten_year_risk_reduction(
-            self, quit_smoking = False, statin_therapy= False, systolic_improvement = 0, aspirin = False):
+            self, quit_smoking = False, statin_therapy= False, bp_meds = False, aspirin = False):
         base_score = self.compute_ten_year_score()
         optimal_score = self.compute_optimal_ten_year()
-        total_reduced_score = 0
+        total_reduced_score = base_score
 
         if (quit_smoking):
-            total_reduced_score +=  (base_score * 0.15)
+            total_reduced_score *= 0.73
 
         if (statin_therapy):
-            total_reduced_score +=  base_score * 0.25
+            total_reduced_score *= 0.75
 
-        if (systolic_improvement > 0):
-            total_reduced_score += base_score - (base_score * (0.7 ** ((self.systolic - 140) / 10)))
+        if (bp_meds):
+            total_reduced_score  *= exp((log(0.84) + log(0.64)) / 2)
 
         if (aspirin):
-            total_reduced_score +=  base_score * 0.1
+            total_reduced_score *= 0.90
 
         if (round(base_score - total_reduced_score) <= optimal_score):
             return round (base_score - total_reduced_score)
-
-        return total_reduced_score
+        return round(total_reduced_score,1)
 
 
     def compute_optimal_ten_year(self):
