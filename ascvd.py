@@ -3,87 +3,31 @@ from math import *
 
 class ASCVD:
 
-    @property
-    def age(self):
-        return self.__age
+    def __init__(self, age, gender, race, total_cholesterol, hdl, systolic,
+                 hypertensive=False, smoker=False, diabetic=False):
 
-    @age.setter
-    def age(self, val):
-        if val < 40 or val > 79:
-            raise ValueError('Invalid age: ' + str(val) + ' - Age must be between 40 and 79')
-        self.__age = val
+        if age < 40 or age > 79:
+            raise ValueError('Invalid age: ', age, ' - Age must be between 40 and 79')
 
-    @property
-    def total_cholesterol(self):
-        return self.__total_chol
+        if total_cholesterol < 130 or total_cholesterol > 320:
+            raise ValueError('Invalid value: ', total_cholesterol, ' - Total Cholesterol must be between 130 and 320')
 
-    @total_cholesterol.setter
-    def total_cholesterol(self, val):
-        if val < 130 or val > 320:
-            raise ValueError('Invalid value: ' + str(val) + ' - Total Cholesterol must be between 130 and 320')
-        self.__total_chol = val
+        if hdl < 20 or hdl > 100:
+            raise ValueError("Invalid value: ", hdl, ' - HDL must be between 20 and 100')
 
-    @property
-    def hdl(self):
-        return self.__hdl
+        if systolic < 90 or systolic > 200:
+            raise ValueError("Invalid value: ", systolic, ' - Systolic must be between 90 and 200')
 
-    @hdl.setter
-    def hdl(self, val):
-        if val < 20 or val > 100:
-            raise ValueError("Invalid value: " + str(val) + ' - HDL must be between 20 and 100')
-        self.__hdl = val
+        self.age = age
+        self.gender = gender
+        self.race = race
+        self.total_cholesterol = total_cholesterol
+        self.hdl = hdl
+        self.systolic = systolic
+        self.hypertensive = hypertensive
+        self.smoker = smoker
+        self.diabetic = diabetic
 
-    @property
-    def hypertensive(self):
-        return self.__hypertensive
-
-    @hypertensive.setter
-    def hypertensive(self, val):
-        self.__hypertensive = val
-
-    @property
-    def systolic(self):
-        return self.__systolic
-
-    @systolic.setter
-    def systolic(self, val):
-        if val < 90 or val > 200:
-            raise ValueError("Invalid value: " + str(val) + ' - Systolic must be between 90 and 200')
-        self.__systolic = val
-
-    @property
-    def smoker(self):
-        return self.__smoker
-
-    @smoker.setter
-    def smoker(self, val):
-        self.__smoker = val
-
-    @property
-    def race(self):
-        return self.__race
-
-    @race.setter
-    def race(self, val):
-        self.__race = val
-
-    @property
-    def gender(self):
-        return self.__gender
-
-    @gender.setter
-    def gender(self, val):
-        self.__gender = val
-
-    @property
-    def diabetic(self):
-        return self.__diabetic
-
-    @diabetic.setter
-    def diabetic(self, val):
-        self.__diabetic = val
-
-    # is_male, is_aa
     whom = {
         True: {
             True: 'aa_male',
@@ -143,7 +87,7 @@ class ASCVD:
             'smoker_age_co': 0,
             'diabetic_co': 0.645
         },
-        'aa_female': {  ## todo why different from paper
+        'aa_female': {  # todo why different from paper
             'age_co': 17.1141,
             'age2_co': 0,
             'chol_co': 0.9396,
@@ -191,109 +135,156 @@ class ASCVD:
     }
 
     def compute_ten_year_score(self):
-        if self.age < 40 or self.age > 79:
-            return 0
-
-        who = self.who()
-
-        predict_ret = self.sum_of_calcs()
-        pct = (1 - (self.baseline_survival[who] ** exp(predict_ret - self.mnxb[who])))
+        predict_ret = self._sum_of_calcs()
+        pct = (1 - (self.baseline_survival[self.__who()] ** exp(predict_ret - self.mnxb[self.__who()])))
         return round((pct * 100), 1)
 
-    # Table A calculations
-    def sum_of_calcs(self):
-        cof = self.coefficients()
-
-        v = round(
-            self.calc_age_value(cof)
-            + self.calc_age_squared_value(cof)
-            + self.calc_cholesterol_value(cof)
-            + self.calc_cholesterol_age_value(cof)
-            + self.calc_hdl_value(cof)
-            + self.calc_hdl_age_value(cof)
-            + self.calc_treated_systolic_value(cof)
-            + self.calc_treated_systolic_age_value(cof)
-            + self.calc_untreated_systolic_value(cof)
-            + self.calc_untreated_systolic_age_value(cof)
-            + self.calc_smoker_value(cof)
-            + self.calc_smoker_age_value(cof)
-            + self.calc_diabetic_value(cof)
-            , 2)
-        return v
-
-    def calc_diabetic_value(self, cof):
-        return round(cof['diabetic_co'] * int(self.diabetic), 2)
-
-    def calc_smoker_age_value(self, cof):
-        return round(cof['smoker_age_co'] * log(self.age) * int(self.smoker), 2)
-
-    def calc_smoker_value(self, cof):
-        return round(cof['smoker_co'] * int(self.smoker), 2)
-
-    def calc_untreated_systolic_age_value(self, cof):
-        return round(cof['untreated_systolic_age_co'] * log(self.age) * log(self.systolic) * int(not self.hypertensive), 2)
-
-    def calc_untreated_systolic_value(self, cof):
-        return round(cof['untreated_systolic_co'] * log(self.systolic) * int(not self.hypertensive), 2)
-
-    def calc_treated_systolic_age_value(self, cof):
-        return round(
-            cof['treated_systolic_age_co'] * log(self.age) * log(self.systolic)  * int(self.hypertensive), 2)
-
-    def calc_treated_systolic_value(self, cof):
-        return round(cof['treated_systolic_co'] * log(self.systolic) * int(self.hypertensive), 2)
-
-    def calc_hdl_age_value(self, cof):
-        return round(cof['hdl_age_co'] * log(self.age) * log(self.hdl), 2)
-
-    def calc_hdl_value(self, cof):
-        return round(cof['hdl_co'] * log(self.hdl), 2)
-
-    def calc_cholesterol_age_value(self, cof):
-        return round(cof['chol_age_co'] * log(self.age) * log(self.total_cholesterol), 2)
-
-    def calc_cholesterol_value(self, cof):
-        return round(cof['chol_co'] * log(self.total_cholesterol), 2)
-
-    def calc_age_squared_value(self, cof):
-        return round(cof['age2_co'] * (log(self.age) ** 2), 2)
-
-    def calc_age_value(self, cof):
-        return round(cof['age_co'] * log(self.age), 2)
-
     def compute_lifetime_risk(self):
-        if self.age < 20 or self.age > 59: return 0
+        if self.age < 20 or self.age > 59:
+            return 0
 
         major = (int(self.total_cholesterol >= 240)
                  + int(self.systolic >= 160)
                  + int(self.hypertensive)
                  + int(self.smoker)
-                 + int(self.diabetic)
-                 )
+                 + int(self.diabetic))
 
-        elevated = (
-                int(self.total_cholesterol >= 200 and self.total_cholesterol < 240)
-                + int(self.systolic >= 140 and self.systolic < 160 and not self.hypertensive)
-        )
+        elevated = (int(200 <= self.total_cholesterol < 240)
+                    + int(140 <= self.systolic < 160 and not self.hypertensive))
 
-
-        all_optimal = (
-                          int(
-                              (int(self.total_cholesterol < 180)
-                               + (int(self.systolic < 120) * int(not self.hypertensive)) == 2)
-                          )) * 1 if (major == 0) else 0
+        all_optimal = (int(
+            (int(self.total_cholesterol < 180)
+             + (int(self.systolic < 120) * int(not self.hypertensive)) == 2)
+        )) * 1 if (major == 0) else 0
 
         not_optimal = int(
-            int(self.total_cholesterol >= 180 and self.total_cholesterol < 200)
-            + (int(self.systolic >= 120 and self.systolic < 140 and not self.hypertensive))
+            int(180 <= self.total_cholesterol < 200)
+            + (int(120 <= self.systolic < 140 and not self.hypertensive))
             * int(int(elevated == 0) * int(major == 0)) >= 1)
 
-        ascvd_risk = self.get_ascvd_risk(all_optimal, elevated, major, not_optimal)
+        ascvd_risk = self.__get_ascvd_risk(all_optimal, elevated, major, not_optimal)
 
         return ascvd_risk
 
+    def compute_ten_year_risk_reduction(
+            self, quit_smoking = False, statin_therapy= False, systolic_improvement = 0, aspirin = False):
+        base_score = self.compute_ten_year_score()
+        optimal_score = self.compute_optimal_ten_year()
+        total_reduced_score = 0
 
-    def get_ascvd_risk(self, all_optimal, elevated, major, not_optimal):
+        if (quit_smoking):
+            total_reduced_score +=  (base_score * 0.15)
+
+        if (statin_therapy):
+            total_reduced_score +=  base_score * 0.25
+
+        if (systolic_improvement > 0):
+            total_reduced_score += base_score - (base_score * (0.7 ** ((self.systolic - 140) / 10)))
+
+        if (aspirin):
+            total_reduced_score +=  base_score * 0.1
+
+        if (round(base_score - total_reduced_score) <= optimal_score):
+            return round (base_score - total_reduced_score)
+
+        return total_reduced_score
+
+
+    def compute_optimal_ten_year(self):
+        return self.__compute_optimal(self.compute_ten_year_score)
+
+    def compute_optimal_lifetime(self):
+        return self.__compute_optimal(self.compute_lifetime_risk)
+
+    def __compute_optimal(self, fn):
+        t_systolic = self.systolic
+        t_total_cholesterol = self.total_cholesterol
+        t_hdl = self.hdl
+        t_smoker = self.smoker
+        t_diabetic = self.diabetic
+        t_hypertensive = self.hypertensive
+
+        self.systolic = 90
+        self.total_cholesterol = 130
+        self.hdl = 100
+        self.smoker = False
+        self.diabetic = False
+        self.hypertensive = False
+
+        predict = fn()
+
+        self.systolic = t_systolic
+        self.total_cholesterol = t_total_cholesterol
+        self.hdl = t_hdl
+        self.smoker = t_smoker
+        self.diabetic = t_diabetic
+        self.hypertensive = t_hypertensive
+
+        return predict
+
+    # Table A (from 2013 paper) calculations
+    def _sum_of_calcs(self):
+        cof = self._coefficients()
+
+        return round(
+            self._calc_age_value(cof)
+            + self._calc_age_squared_value(cof)
+            + self._calc_cholesterol_value(cof)
+            + self._calc_cholesterol_age_value(cof)
+            + self._calc_hdl_value(cof)
+            + self._calc_hdl_age_value(cof)
+            + self._calc_treated_systolic_value(cof)
+            + self._calc_treated_systolic_age_value(cof)
+            + self._calc_untreated_systolic_value(cof)
+            + self._calc_untreated_systolic_age_value(cof)
+            + self._calc_smoker_value(cof)
+            + self._calc_smoker_age_value(cof)
+            + self._calc_diabetic_value(cof), 2)
+
+    # The following methods could all be embedded in the above. They were separated for testing individual values
+    # and matched with values from Table A in the paper
+    def _calc_diabetic_value(self, cof):
+        return round(cof['diabetic_co'] * int(self.diabetic), 2)
+
+    def _calc_smoker_age_value(self, cof):
+        return round(cof['smoker_age_co'] * log(self.age) * int(self.smoker), 2)
+
+    def _calc_smoker_value(self, cof):
+        return round(cof['smoker_co'] * int(self.smoker), 2)
+
+    def _calc_untreated_systolic_age_value(self, cof):
+        return round(cof['untreated_systolic_age_co']
+                     * log(self.age) * log(self.systolic) * int(not self.hypertensive), 2)
+
+    def _calc_untreated_systolic_value(self, cof):
+        return round(cof['untreated_systolic_co'] * log(self.systolic) * int(not self.hypertensive), 2)
+
+    def _calc_treated_systolic_age_value(self, cof):
+        return round(
+            cof['treated_systolic_age_co'] * log(self.age) * log(self.systolic) * int(self.hypertensive), 2)
+
+    def _calc_treated_systolic_value(self, cof):
+        return round(cof['treated_systolic_co'] * log(self.systolic) * int(self.hypertensive), 2)
+
+    def _calc_hdl_age_value(self, cof):
+        return round(cof['hdl_age_co'] * log(self.age) * log(self.hdl), 2)
+
+    def _calc_hdl_value(self, cof):
+        return round(cof['hdl_co'] * log(self.hdl), 2)
+
+    def _calc_cholesterol_age_value(self, cof):
+        return round(cof['chol_age_co'] * log(self.age) * log(self.total_cholesterol), 2)
+
+    def _calc_cholesterol_value(self, cof):
+        return round(cof['chol_co'] * log(self.total_cholesterol), 2)
+
+    def _calc_age_squared_value(self, cof):
+        return round(cof['age2_co'] * (log(self.age) ** 2), 2)
+
+    def _calc_age_value(self, cof):
+        return round(cof['age_co'] * log(self.age), 2)
+
+    def __get_ascvd_risk(self, all_optimal, elevated, major, not_optimal):
         params = self.params
         ascvd_risk = 0
         if major > 1:
@@ -308,26 +299,8 @@ class ASCVD:
             ascvd_risk = params[self.gender]['allOptimal']
         return ascvd_risk
 
-
-    def who(self):
+    def __who(self):
         return self.whom[self.race == 'aa'][self.gender == 'male']
 
-    def coefficients(self):
-        return self.coefficient_table[self.who()]
-
-
-a = ASCVD()
-a.age = 58
-a.diabetic = False
-a.smoker = False
-a.hypertensive = True
-a.systolic = 129
-a.gender = 'female'
-a.hdl = 80
-a.total_cholesterol = 160
-a.race = "aa"
-
-v =  a.compute_lifetime_risk() # table is .69
-ten = a.compute_ten_year_score()
-print(v)
-print(ten)
+    def _coefficients(self):
+        return self.coefficient_table[self.__who()]
