@@ -1,3 +1,17 @@
+#    Copyright 2018 Articulus
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+
 from math import *
 
 
@@ -240,8 +254,8 @@ class ASCVD:
             + self._calc_smoker_age_value(cof)
             + self._calc_diabetic_value(cof), 2)
 
-    # The following methods could all be embedded in the above. They were separated for testing individual values
-    # and matched with values from Table A in the paper
+    # The following methods could all be embedded in the above. They were separated and made protected
+    #  for testing individual values and matched with values from Table A in the paper
     def _calc_diabetic_value(self, cof):
         return round(cof['diabetic_co'] * int(self.diabetic), 2)
 
